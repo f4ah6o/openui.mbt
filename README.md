@@ -1,2 +1,1 @@
-# openui.mbt
-OpenUI Lang runtime for MoonBit with Rabbita rendering
+README.mbt.md

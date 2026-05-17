@@ -1,0 +1,52 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "f4ah6o/openui/schema"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn component(String, Array[PropSpec]) -> ComponentSchema
+
+pub fn default_library() -> ComponentLibrary
+
+pub fn library(Array[ComponentSchema]) -> ComponentLibrary
+
+pub fn prop(String, required? : Bool, kind? : ValueKind) -> PropSpec
+
+// Errors
+
+// Types and methods
+pub(all) struct ComponentLibrary {
+  components : Map[String, ComponentSchema]
+} derive(@debug.Debug)
+pub fn ComponentLibrary::get(Self, String) -> ComponentSchema?
+
+pub(all) struct ComponentSchema {
+  name : String
+  props : Array[PropSpec]
+} derive(Eq, @debug.Debug)
+pub fn ComponentSchema::prop_names(Self) -> Array[String]
+pub fn ComponentSchema::required_props(Self) -> Array[String]
+
+pub(all) struct PropSpec {
+  name : String
+  required : Bool
+  kind : ValueKind
+} derive(Eq, @debug.Debug)
+
+pub(all) enum ValueKind {
+  Any
+  String
+  Number
+  Bool
+  Array
+  Object
+  Node
+  Action
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

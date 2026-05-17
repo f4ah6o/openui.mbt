@@ -1,0 +1,19 @@
+{
+  "name": "f4ah6o/openui",
+  "version": "0.1.0",
+  "deps": {
+    "moonbit-community/rabbita": "0.12.2"
+  },
+  "readme": "README.mbt.md",
+  "repository": "https://github.com/f4ah6o/openui.mbt",
+  "license": "Apache-2.0",
+  "keywords": [
+    "openui",
+    "rabbita",
+    "ui",
+    "dsl"
+  ],
+  "description": "OpenUI Lang runtime for MoonBit with Rabbita rendering",
+  "source": "src",
+  "preferred-target": "js"
+}
