@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "f4ah6o/openui/rabbita"
+
+import {
+  "f4ah6o/openui/core",
+  "f4ah6o/openui/schema",
+  "moonbit-community/rabbita/html",
+}
+
+// Values
+pub fn render_static_string(@core.ParseResult, library? : @schema.ComponentLibrary, state? : @core.RuntimeState) -> String
+
+pub fn render_to_html(@core.ParseResult, library? : @schema.ComponentLibrary, state? : @core.RuntimeState) -> @html.Html
+
+pub fn render_value_to_html(@core.Value) -> @html.Html
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

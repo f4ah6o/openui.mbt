@@ -1,0 +1,124 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "f4ah6o/openui/core"
+
+import {
+  "f4ah6o/openui/schema",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn diagnostic(String, String, line? : Int, target? : String) -> Diagnostic
+
+pub fn diagnostics_summary(Array[Diagnostic]) -> String
+
+pub fn evaluate(ParseResult, library? : @schema.ComponentLibrary, state? : RuntimeState) -> RuntimeResult
+
+pub fn parse(String, schema? : @schema.ComponentLibrary) -> ParseResult
+
+// Errors
+
+// Types and methods
+pub(all) enum ActionStep {
+  Set(String, Value)
+  Reset(String)
+  Unsupported(String)
+} derive(@debug.Debug)
+
+pub(all) struct Argument {
+  name : String?
+  value : Expr
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ComponentNode {
+  name : String
+  props : Map[String, Value]
+} derive(@debug.Debug)
+
+pub(all) struct Diagnostic {
+  code : String
+  message : String
+  line : Int
+  target : String
+} derive(Eq, @debug.Debug)
+pub fn Diagnostic::summary(Self) -> String
+
+pub(all) enum Expr {
+  Null
+  Bool(Bool)
+  Number(String)
+  String(String)
+  Array(Array[Expr])
+  Object(Array[ObjectField])
+  Reference(String)
+  StateRef(String)
+  Member(Expr, String)
+  Call(String, Array[Argument])
+  Builtin(String, Array[Argument])
+  Unary(String, Expr)
+  Binary(String, Expr, Expr)
+  Ternary(Expr, Expr, Expr)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ObjectField {
+  key : String
+  value : Expr
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ParseResult {
+  program : Program
+  diagnostics : Array[Diagnostic]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Program {
+  statements : Array[Statement]
+  entry : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RuntimeResult {
+  root : Value
+  state : RuntimeState
+  diagnostics : Array[Diagnostic]
+} derive(@debug.Debug)
+
+pub(all) struct RuntimeState {
+  defaults : Map[String, Value]
+  values : Map[String, Value]
+} derive(@debug.Debug)
+pub fn RuntimeState::apply(Self, ActionStep) -> Self
+pub fn RuntimeState::apply_all(Self, Array[ActionStep]) -> Self
+pub fn RuntimeState::get(Self, String) -> Value
+pub fn RuntimeState::new(Program) -> Self
+
+pub(all) struct Statement {
+  name : String
+  is_state : Bool
+  expr : Expr
+  line : Int
+} derive(Eq, @debug.Debug)
+
+pub struct StreamingParser {
+  mut buffer : String
+  schema : @schema.ComponentLibrary
+} derive(@debug.Debug)
+pub fn StreamingParser::get_result(Self) -> ParseResult
+pub fn StreamingParser::new(schema? : @schema.ComponentLibrary) -> Self
+pub fn StreamingParser::push(Self, String) -> Unit
+
+pub(all) enum Value {
+  VNull
+  VBool(Bool)
+  VNumber(String)
+  VString(String)
+  VArray(Array[Value])
+  VObject(Map[String, Value])
+  VElement(ComponentNode)
+  VAction(Array[ActionStep])
+  VUnsupported(String)
+} derive(@debug.Debug)
+pub fn Value::is_truthy(Self) -> Bool
+pub fn Value::to_text(Self) -> String
+
+// Type aliases
+
+// Traits
+

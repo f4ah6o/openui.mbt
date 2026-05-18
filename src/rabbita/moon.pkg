@@ -1,0 +1,7 @@
+import {
+  "f4ah6o/openui/core" @core,
+  "f4ah6o/openui/schema" @schema,
+  "moonbit-community/rabbita/html" @html,
+}
+
+supported_targets = "js+native"
