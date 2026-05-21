@@ -25,3 +25,57 @@ test "evaluate component tree" {
     other => inspect(other.to_text())
   }
 }
+
+///|
+test "numeric expressions keep numeric semantics" {
+  let source = "neg = -5\ncmp = 9 > 10\nmul = 3 * 4\nroot = 0.00 ? \"bad\" : \"ok\""
+  let parsed = parse(source)
+  let result = evaluate({
+    program: { statements: parsed.program.statements, entry: Some("root") },
+    diagnostics: [],
+  })
+  match result.root {
+    VString(value) => inspect(value, content="ok")
+    other => inspect(other.to_text())
+  }
+  match
+    evaluate({
+      program: { statements: parsed.program.statements, entry: Some("neg") },
+      diagnostics: [],
+    }).root {
+    VNumber(value) => inspect(value, content="-5")
+    other => inspect(other.to_text())
+  }
+  match
+    evaluate({
+      program: { statements: parsed.program.statements, entry: Some("cmp") },
+      diagnostics: [],
+    }).root {
+    VBool(value) => inspect(value, content="false")
+    other => inspect(other.to_text())
+  }
+  match
+    evaluate({
+      program: { statements: parsed.program.statements, entry: Some("mul") },
+      diagnostics: [],
+    }).root {
+    VNumber(value) => inspect(value, content="12")
+    other => inspect(other.to_text())
+  }
+}
+
+///|
+test "boolean operators short circuit" {
+  let left_false = evaluate(parse("root = false && missing_ref"))
+  match left_false.root {
+    VBool(value) => inspect(value, content="false")
+    other => inspect(other.to_text())
+  }
+  assert_eq(left_false.diagnostics.length(), 0)
+  let left_true = evaluate(parse("root = true || missing_ref"))
+  match left_true.root {
+    VBool(value) => inspect(value, content="true")
+    other => inspect(other.to_text())
+  }
+  assert_eq(left_true.diagnostics.length(), 0)
+}

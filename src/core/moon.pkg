@@ -1,3 +1,4 @@
 import {
   "f4ah6o/openui/schema" @schema,
+  "moonbitlang/core/strconv" @strconv,
 }

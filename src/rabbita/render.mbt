@@ -238,15 +238,37 @@ fn tag(name : String, class_name : String, children : Array[String]) -> String {
 ///|
 fn stringify_node(node : @core.ComponentNode) -> String {
   match node.name {
-    "TextContent" => tag("p", "", [escape_text(text(prop(node, "content")))])
-    "Stack" =>
-      tag("div", "openui-stack", stringify_children(prop(node, "children")))
-    "Card" =>
-      tag("div", "openui-card", stringify_children(prop(node, "children")))
+    "TextContent" => {
+      let name = match text(prop(node, "variant")) {
+        "h1" => "h1"
+        "h2" => "h2"
+        "h3" => "h3"
+        _ => "p"
+      }
+      tag(name, "", [escape_text(text(prop(node, "content")))])
+    }
+    "Stack" => {
+      let class_name = if text(prop(node, "direction")) == "horizontal" {
+        "openui-stack openui-stack-horizontal"
+      } else {
+        "openui-stack openui-stack-vertical"
+      }
+      tag("div", class_name, stringify_children(prop(node, "children")))
+    }
+    "Card" => {
+      let children : Array[String] = []
+      let title = text(prop(node, "title"))
+      if title != "" {
+        children.push(tag("h2", "openui-card-title", [escape_text(title)]))
+      }
+      children.append(stringify_children(prop(node, "children")))
+      tag("div", "openui-card", children)
+    }
     "Button" =>
-      tag("button", "openui-button", [escape_text(text(prop(node, "label")))])
+      tag("button", button_class(node), [escape_text(text(prop(node, "label")))])
     "Input" =>
       "<input value=\"" + escape_text(text(prop(node, "value"))) + "\">"
+    "Select" => stringify_select(node)
     "Form" => tag("form", "", stringify_children(prop(node, "children")))
     "FormControl" =>
       tag("label", "openui-form-control", [
@@ -255,8 +277,108 @@ fn stringify_node(node : @core.ComponentNode) -> String {
         ]),
         stringify_value(prop(node, "control")),
       ])
+    "Buttons" =>
+      tag("div", "openui-buttons", stringify_children(prop(node, "buttons")))
+    "Tabs" => tag("div", "openui-tabs", stringify_children(prop(node, "tabs")))
+    "Table" => stringify_table(node)
+    "BarChart" => stringify_bar_chart(node)
     other => tag("div", "openui-unknown", [escape_text(other)])
   }
+}
+
+///|
+fn button_class(node : @core.ComponentNode) -> String {
+  let variant = text(prop(node, "variant"))
+  if variant == "" {
+    "openui-button"
+  } else {
+    "openui-button openui-button-" + variant
+  }
+}
+
+///|
+fn stringify_select(node : @core.ComponentNode) -> String {
+  let current = text(prop(node, "value"))
+  let options : Array[String] = []
+  match prop(node, "options") {
+    @core.VArray(items) =>
+      for item in items {
+        let value = item.to_text()
+        let selected = if value == current { " selected=\"true\"" } else { "" }
+        options.push(
+          "<option value=\"" +
+          escape_text(value) +
+          "\"" +
+          selected +
+          ">" +
+          escape_text(value) +
+          "</option>",
+        )
+      }
+    _ => ()
+  }
+  "<select>" + options.join("") + "</select>"
+}
+
+///|
+fn stringify_table(node : @core.ComponentNode) -> String {
+  let header_cells : Array[String] = []
+  match prop(node, "columns") {
+    @core.VArray(cols) =>
+      for col in cols {
+        header_cells.push(tag("th", "", [escape_text(col.to_text())]))
+      }
+    _ => ()
+  }
+  let body_rows : Array[String] = []
+  match prop(node, "rows") {
+    @core.VArray(rows) =>
+      for row in rows {
+        let cells : Array[String] = []
+        match row {
+          @core.VObject(fields) =>
+            match prop(node, "columns") {
+              @core.VArray(cols) =>
+                for col in cols {
+                  cells.push(
+                    tag("td", "", [
+                      escape_text(
+                        fields
+                        .get(col.to_text())
+                        .unwrap_or(@core.VNull)
+                        .to_text(),
+                      ),
+                    ]),
+                  )
+                }
+              _ => ()
+            }
+          other => cells.push(tag("td", "", [escape_text(other.to_text())]))
+        }
+        body_rows.push(tag("tr", "", cells))
+      }
+    _ => ()
+  }
+  tag("table", "", [
+    tag("thead", "", [tag("tr", "", header_cells)]),
+    tag("tbody", "", body_rows),
+  ])
+}
+
+///|
+fn stringify_bar_chart(node : @core.ComponentNode) -> String {
+  let rows : Array[String] = []
+  match prop(node, "data") {
+    @core.VArray(items) =>
+      for item in items {
+        rows.push(tag("li", "", [escape_text(item.to_text())]))
+      }
+    _ => ()
+  }
+  tag("div", "openui-bar-chart", [
+    tag("h3", "", ["BarChart"]),
+    tag("ul", "", rows),
+  ])
 }
 
 ///|

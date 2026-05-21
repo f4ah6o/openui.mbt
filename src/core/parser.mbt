@@ -121,13 +121,17 @@ fn ExprParser::parse_number(self : ExprParser) -> Expr {
       _ => break
     }
   }
-  if self.consume_char('.') {
-    while !self.at_end() {
-      match self.peek() {
-        Some(c) if c.is_ascii_digit() => ignore(self.advance())
-        _ => break
+  match self.peek() {
+    Some('.') => {
+      ignore(self.advance())
+      while !self.at_end() {
+        match self.peek() {
+          Some(c) if c.is_ascii_digit() => ignore(self.advance())
+          _ => break
+        }
       }
     }
+    _ => ()
   }
   Expr::Number(self.text.sub(start~, end=self.pos).to_owned())
 }

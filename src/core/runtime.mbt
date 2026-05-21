@@ -59,12 +59,34 @@ pub fn Value::is_truthy(self : Value) -> Bool {
   match self {
     VNull => false
     VBool(v) => v
-    VNumber(v) => v != "0" && v != "0.0" && v != ""
+    VNumber(v) => parse_number_value(v).unwrap_or(0.0) != 0.0
     VString(v) => v != ""
     VArray(items) => !items.is_empty()
     VObject(fields) => !fields.is_empty()
     VElement(_) | VAction(_) => true
     VUnsupported(_) => false
+  }
+}
+
+///|
+fn parse_number_value(value : String) -> Double? {
+  let parsed : Double = @strconv.from_str(value) catch { _ => return None }
+  Some(parsed)
+}
+
+///|
+fn number_binary(
+  left : Value,
+  right : Value,
+  op : (Double, Double) -> Double,
+) -> Value? {
+  match (left, right) {
+    (VNumber(l), VNumber(r)) =>
+      match (parse_number_value(l), parse_number_value(r)) {
+        (Some(left), Some(right)) => Some(VNumber(op(left, right).to_string()))
+        _ => None
+      }
+    _ => None
   }
 }
 
@@ -223,7 +245,15 @@ fn EvalContext::eval_unary(
   let value = self.eval(inner)
   match op {
     "!" => VBool(!value.is_truthy())
-    "-" => VString("-" + value.to_text())
+    "-" =>
+      match value {
+        VNumber(raw) =>
+          match parse_number_value(raw) {
+            Some(number) => VNumber((-number).to_string())
+            None => VNumber("-" + raw)
+          }
+        _ => VUnsupported("-")
+      }
     _ => VUnsupported(op)
   }
 }
@@ -235,18 +265,87 @@ fn EvalContext::eval_binary(
   left : Expr,
   right : Expr,
 ) -> Value {
-  let l = self.eval(left)
-  let r = self.eval(right)
   match op {
-    "+" => VString(l.to_text() + r.to_text())
-    "==" => VBool(l.to_text() == r.to_text())
-    "!=" => VBool(l.to_text() != r.to_text())
-    ">" => VBool(l.to_text() > r.to_text())
-    "<" => VBool(l.to_text() < r.to_text())
-    ">=" => VBool(l.to_text() >= r.to_text())
-    "<=" => VBool(l.to_text() <= r.to_text())
-    "&&" => VBool(l.is_truthy() && r.is_truthy())
-    "||" => VBool(l.is_truthy() || r.is_truthy())
+    "&&" => {
+      let l = self.eval(left)
+      if !l.is_truthy() {
+        VBool(false)
+      } else {
+        VBool(self.eval(right).is_truthy())
+      }
+    }
+    "||" => {
+      let l = self.eval(left)
+      if l.is_truthy() {
+        VBool(true)
+      } else {
+        VBool(self.eval(right).is_truthy())
+      }
+    }
+    _ => {
+      let l = self.eval(left)
+      let r = self.eval(right)
+      match op {
+        "+" =>
+          match number_binary(l, r, fn(a, b) { a + b }) {
+            Some(value) => value
+            None => VString(l.to_text() + r.to_text())
+          }
+        "-" =>
+          match number_binary(l, r, fn(a, b) { a - b }) {
+            Some(value) => value
+            None => VUnsupported("-")
+          }
+        "*" =>
+          match number_binary(l, r, fn(a, b) { a * b }) {
+            Some(value) => value
+            None => VUnsupported("*")
+          }
+        "/" =>
+          match number_binary(l, r, fn(a, b) { a / b }) {
+            Some(value) => value
+            None => VUnsupported("/")
+          }
+        "==" => VBool(l.to_text() == r.to_text())
+        "!=" => VBool(l.to_text() != r.to_text())
+        ">" => compare_values(l, r, ">")
+        "<" => compare_values(l, r, "<")
+        ">=" => compare_values(l, r, ">=")
+        "<=" => compare_values(l, r, "<=")
+        _ => VUnsupported(op)
+      }
+    }
+  }
+}
+
+///|
+fn compare_values(left : Value, right : Value, op : String) -> Value {
+  match (left, right) {
+    (VNumber(l), VNumber(r)) =>
+      match (parse_number_value(l), parse_number_value(r)) {
+        (Some(a), Some(b)) =>
+          match op {
+            ">" => VBool(a > b)
+            "<" => VBool(a < b)
+            ">=" => VBool(a >= b)
+            "<=" => VBool(a <= b)
+            _ => VUnsupported(op)
+          }
+        _ => compare_text(VNumber(l), VNumber(r), op)
+      }
+    _ => compare_text(left, right, op)
+  }
+}
+
+///|
+fn compare_text(left : Value, right : Value, op : String) -> Value {
+  let l = left.to_text()
+  let r = right.to_text()
+  match op {
+    ">" => VBool(l > r)
+    "<" => VBool(l < r)
+    ">=" => VBool(l >= r)
+    "<=" => VBool(l <= r)
     _ => VUnsupported(op)
   }
 }
